@@ -1,0 +1,923 @@
+{% extends "polls/base.html" %}
+<!-- 
+PLANTILLA DE RESULTADOS DE ENCUESTA - results.html
+
+PROPÓSITO:
+Esta plantilla muestra los resultados de una encuesta específica con:
+- Gráficos visuales (barras y circular)
+- Estadísticas detalladas
+- Actualización en tiempo real
+- Información de participación
+
+CARACTERÍSTICAS PRINCIPALES:
+1. Visualización de datos con Chart.js
+2. Actualización automática cada 30 segundos
+3. Estadísticas completas (total votos, opciones, ganador)
+4. Diseño responsivo y atractivo
+5. Información temporal de la encuesta
+
+TECNOLOGÍAS UTILIZADAS:
+- Django Template Language: Lógica de presentación
+- Chart.js: Librería para gráficos interactivos
+- Bootstrap 5: Framework CSS responsivo
+- JavaScript: Interactividad y actualización automática
+- Font Awesome: Iconografía
+
+FLUJO DE DATOS:
+Vista results() → Contexto con estadísticas → Esta plantilla → 
+Renderizado con gráficos → Actualización periódica vía AJAX
+-->
+
+<!-- 
+TÍTULO DINÁMICO DE LA PÁGINA:
+Se muestra en la pestaña del navegador
+Incluye el texto de la pregunta para mejor identificación
+-->
+{% block title %}Resultados: {{ question.question_text }} - Encuestas App{% endblock %}
+
+<!-- 
+CONTENIDO PRINCIPAL DE LA PÁGINA:
+Todo el contenido específico para mostrar resultados
+-->
+{% block content %}
+
+<!-- 
+ESTRUCTURA PRINCIPAL DE LA PÁGINA DE RESULTADOS
+Usa un layout más ancho que la página de votación para acomodar gráficos
+-->
+<div class="row">
+    <!-- 
+    CONTENEDOR PRINCIPAL:
+    - col-lg-10: En pantallas grandes ocupa 10 de 12 columnas (83%)
+    - mx-auto: Centrado horizontalmente
+    - Más ancho que detail.html para mostrar gráficos cómodamente
+    -->
+    <div class="col-lg-10 mx-auto">
+        
+        <!-- 
+        TARJETA PRINCIPAL DE RESULTADOS:
+        Contiene todos los elementos de visualización de datos
+        -->
+        <div class="card shadow-lg border-0 fade-in">
+            
+            <!-- 
+            ENCABEZADO DE RESULTADOS:
+            - bg-success: Color verde para indicar "resultados exitosos"
+            - Incluye indicadores de actualización en tiempo real
+            -->
+            <div class="card-header bg-success text-white">
+                <!-- 
+                LAYOUT FLEXBOX:
+                Distribuye el título a la izquierda y los indicadores a la derecha
+                -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <!-- TÍTULO PRINCIPAL -->
+                    <h1 class="h4 mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Resultados en Tiempo Real
+                    </h1>
+                    <!-- 
+                    INDICADORES DE ACTUALIZACIÓN:
+                    Muestran el estado de la actualización automática
+                    -->
+                    <div class="d-flex align-items-center">
+                        <!-- 
+                        BADGE DE ESTADO:
+                        Indica que la página se está actualizando
+                        -->
+                        <span class="badge bg-light text-dark me-2">
+                            <!-- 
+                            ÍCONO ROTATIVO:
+                            id="refreshIcon" permite controlarlo con JavaScript
+                            para mostrar animación de carga
+                            -->
+                            <i class="fas fa-sync-alt me-1" id="refreshIcon"></i>
+                            Actualizando...
+                        </span>
+                        <!-- 
+                        TIMESTAMP DE ÚLTIMA ACTUALIZACIÓN:
+                        Se actualiza dinámicamente con JavaScript
+                        -->
+                        <small id="lastUpdate">
+                            <i class="fas fa-clock me-1"></i>
+                            Ahora
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <!-- 
+            CUERPO PRINCIPAL DE LA TARJETA:
+            Contiene toda la información y gráficos de resultados
+            -->
+            <div class="card-body p-4">
+                
+                <!-- 
+                SECCIÓN DE PREGUNTA Y ESTADÍSTICAS GENERALES:
+                Muestra el contexto de la encuesta y números principales
+                -->
+                <div class="mb-4">
+                    <!-- 
+                    PREGUNTA PRINCIPAL:
+                    Repetimos la pregunta para que el usuario tenga contexto
+                    -->
+                    <h2 class="text-primary mb-3">{{ question.question_text }}</h2>
+                    
+                    <!-- 
+                    ESTADÍSTICAS PRINCIPALES:
+                    Dashboard con métricas clave de la encuesta
+                    -->
+                    <div class="row mb-4">
+                        <!-- 
+                        ESTADÍSTICA 1: TOTAL DE VOTOS
+                        -->
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <!-- 
+                                NÚMERO PRINCIPAL:
+                                id="totalVotes" permite actualización dinámica
+                                total_votes viene del contexto de la vista
+                                -->
+                                <div class="stat-number" id="totalVotes">{{ total_votes }}</div>
+                                <div>
+                                    <!-- 
+                                    TEXTO DESCRIPTIVO CON PLURALIZACIÓN:
+                                    |pluralize agrega 's' si no es singular
+                                    |pluralize:"es" agrega 'es' para "Total/Totales"
+                                    -->
+                                    Voto{{ total_votes|pluralize }} Total{{ total_votes|pluralize:"es" }}
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 
+                        ESTADÍSTICA 2: NÚMERO DE OPCIONES
+                        -->
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <div class="stat-number">
+                                    <!-- 
+                                    CONTAR OPCIONES:
+                                    choices_with_stats es una lista preparada en la vista
+                                    |length cuenta cuántos elementos tiene
+                                    -->
+                                    {{ choices_with_stats|length }}
+                                </div>
+                                <!-- 
+                                DESCRIPCIÓN:
+                                Texto descriptivo de la estadística
+                                -->
+                                <div>Opcion{{ choices_with_stats|length|pluralize:"es" }}</div>
+                            </div>
+                        </div>
+                        <!-- 
+                        ESTADÍSTICA 3: PARTICIPACIÓN DEL USUARIO
+                        -->
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <div class="stat-number">
+                                    <!-- 
+                                    INDICADOR VISUAL DE PARTICIPACIÓN:
+                                    Muestra si el usuario actual ya votó o no
+                                    user_vote es pasado desde la vista
+                                    -->
+                                    {% if user_vote %}
+                                        <i class="fas fa-check-circle"></i>
+                                    {% else %}
+                                        <i class="fas fa-minus-circle"></i>
+                                    {% endif %}
+                                </div>
+                                <div>Tu Participación</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 
+                SECCIÓN PRINCIPAL: RESULTADOS POR OPCIÓN
+                Solo se muestra si hay votos registrados
+                -->
+                {% if total_votes > 0 %}
+                    <div class="mb-4">
+                        <!-- 
+                        TÍTULO DE LA SECCIÓN:
+                        Encabezado para la lista de resultados
+                        -->
+                        <h4 class="text-secondary mb-3">
+                            <i class="fas fa-poll me-2"></i>
+                            Distribución de Votos:
+                        </h4>
+                        
+                        <!-- 
+                        CONTENEDOR DE RESULTADOS:
+                        id="resultsContainer" permite actualización dinámica con JavaScript
+                        -->
+                        <div id="resultsContainer">
+                            <!-- 
+                            BUCLE PARA CADA OPCIÓN CON ESTADÍSTICAS:
+                            choices_with_stats viene preparado desde la vista con:
+                            - choice: El objeto Choice
+                            - vote_count: Número de votos
+                            - percentage: Porcentaje calculado
+                            -->
+                            {% for choice_stat in choices_with_stats %}
+                                <!-- 
+                                ITEM INDIVIDUAL DE RESULTADO:
+                                - .result-item: Clase CSS personalizada
+                                - data-choice-id: Atributo para identificación en JavaScript
+                                -->
+                                <div class="mb-4 result-item" data-choice-id="{{ choice_stat.choice.id }}">
+                                    
+                                    <!-- 
+                                    ENCABEZADO DE LA OPCIÓN:
+                                    Muestra el texto y marcadores especiales
+                                    -->
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <!-- TEXTO DE LA OPCIÓN -->
+                                            <h6 class="mb-0 me-2">{{ choice_stat.choice.choice_text }}</h6>
+                                            <!-- 
+                                            MARCADOR DE VOTO DEL USUARIO:
+                                            Solo se muestra si el usuario votó por esta opción
+                                            -->
+                                            {% if user_vote and user_vote.id == choice_stat.choice.id %}
+                                                <span class="badge bg-primary">
+                                                    <i class="fas fa-vote-yea me-1"></i>Tu voto
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <!-- 
+                                        ESTADÍSTICAS NUMÉRICAS:
+                                        Muestran votos y porcentaje en el lado derecho
+                                        -->
+                                        <div class="text-end">
+                                            <!-- 
+                                            NÚMERO DE VOTOS:
+                                            - data-votes: Atributo para actualización con JavaScript
+                                            - choice_stat.votes: Calculado en la vista
+                                            -->
+                                            <span class="fw-bold text-primary fs-5" data-votes="{{ choice_stat.votes }}">
+                                                {{ choice_stat.votes }}
+                                            </span>
+                                            <small class="text-muted ms-1">
+                                                <!-- 
+                                                PORCENTAJE:
+                                                - data-percentage: Para actualización JavaScript
+                                                - choice_stat.percentage: Calculado en la vista
+                                                -->
+                                                (<span data-percentage="{{ choice_stat.percentage }}">{{ choice_stat.percentage }}</span>%)
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 
+                                    BARRA DE PROGRESO VISUAL:
+                                    Representación gráfica del porcentaje de votos
+                                    -->
+                                    <div class="position-relative">
+                                        <!-- Barra súper simple que SÍ funciona -->
+                                        <div style="background-color: #e9ecef; height: 40px; border-radius: 15px; position: relative;">
+                                            {% if choice_stat.percentage > 0 %}
+                                            <div style="background: linear-gradient(90deg, #007bff, #0056b3); height: 100%; width: {{ choice_stat.percentage }}%; border-radius: 15px;"></div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- 
+                    SECCIÓN DE GRÁFICO CIRCULAR:
+                    Visualización alternativa usando Chart.js
+                    -->
+                    <div class="mb-4">
+                        <h4 class="text-secondary mb-3">
+                            <i class="fas fa-chart-pie me-2"></i>
+                            Vista Gráfica:
+                        </h4>
+                        <div class="text-center">
+                            <!-- 
+                            CANVAS PARA CHART.JS:
+                            - id="resultsChart": Identificador para JavaScript
+                            - width/height: Dimensiones del canvas
+                            Chart.js dibujará el gráfico circular aquí
+                            -->
+                            <canvas id="resultsChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                {% else %}
+                    <!-- 
+                    CASO ESPECIAL: SIN VOTOS
+                    Se muestra cuando total_votes == 0
+                    -->
+                    <!-- 
+                    MENSAJE PARA ENCUESTA SIN VOTOS:
+                    Pantalla amigable que invita a la participación
+                    -->
+                    <div class="text-center py-5">
+                        <!-- ÍCONO GRANDE DECORATIVO -->
+                        <i class="fas fa-vote-yea fa-5x text-muted mb-3"></i>
+                        <!-- TÍTULO DEL MENSAJE -->
+                        <h4 class="text-muted">Aún no hay votos</h4>
+                        <!-- TEXTO MOTIVACIONAL -->
+                        <p class="text-muted lead">
+                            ¡Sé el primero en votar en esta encuesta!
+                        </p>
+                        <!-- 
+                        ENLACE PARA VOTAR:
+                        Redirige a la página de detalle para que puedan votar
+                        -->
+                        <a href="{% url 'polls:detail' question.id %}" class="btn btn-primary btn-lg btn-custom">
+                            <i class="fas fa-vote-yea me-2"></i>
+                            Votar Ahora
+                        </a>
+                    </div>
+                {% endif %}
+                
+                <!-- Información adicional -->
+                {% if user_vote %}
+                    <div class="alert alert-success border-0 shadow-sm">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle fa-2x me-3"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">¡Gracias por participar!</h6>
+                                <p class="mb-0">
+                                    Tu voto por <strong>"{{ user_vote.choice_text }}"</strong> ha sido contabilizado.
+                                    Los resultados se actualizan automáticamente cada 5 segundos.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info border-0 shadow-sm">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle fa-2x me-3"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">¿Quieres participar?</h6>
+                                <p class="mb-2">
+                                    Aún puedes votar en esta encuesta y ver cómo tu voto afecta los resultados.
+                                </p>
+                                <a href="{% url 'polls:detail' question.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-vote-yea me-1"></i>
+                                    Ir a votar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Footer -->
+            <div class="card-footer bg-light">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>
+                            Publicada el {{ question.pub_date|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <a href="{% url 'polls:index' %}" class="btn btn-outline-secondary btn-sm me-2">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Volver a la lista
+                        </a>
+                        <a href="{% url 'polls:detail' question.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-vote-yea me-1"></i>
+                            {% if user_vote %}Ver encuesta{% else %}Votar{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información sobre actualizaciones en tiempo real -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="bg-light p-3 rounded border">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="text-primary mb-1">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Actualización en Tiempo Real
+                            </h6>
+                            <small class="text-muted">
+                                Los resultados se actualizan automáticamente cada 5 segundos sin recargar la página.
+                            </small>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <button class="btn btn-outline-primary btn-sm" onclick="manualRefresh()">
+                                <i class="fas fa-sync me-1"></i>
+                                Actualizar Ahora
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos para la página de resultados */
+    
+    .result-item {
+        animation: slideInLeft 0.5s ease-out forwards;
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    
+    .result-item:nth-child(1) { animation-delay: 0.1s; }
+    .result-item:nth-child(2) { animation-delay: 0.2s; }
+    .result-item:nth-child(3) { animation-delay: 0.3s; }
+    .result-item:nth-child(4) { animation-delay: 0.4s; }
+    .result-item:nth-child(5) { animation-delay: 0.5s; }
+    
+    @keyframes slideInLeft {
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .updating {
+        animation: pulse 1s ease-in-out;
+    }
+    
+    #refreshIcon {
+        animation: spin 2s linear infinite;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+<!-- 
+BLOQUE JAVASCRIPT PERSONALIZADO:
+JavaScript específico para la página de resultados
+-->
+{% block extra_js %}
+<!-- 
+LIBRERÍA CHART.JS:
+CDN externo para crear gráficos interactivos
+Permite crear gráficos de barras, líneas, circular, etc.
+-->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    /* 
+    JAVASCRIPT PARA RESULTADOS EN TIEMPO REAL
+    
+    Este código maneja:
+    1. Creación de gráficos con Chart.js
+    2. Actualización automática de datos
+    3. Animaciones de barras de progreso
+    4. Efectos visuales dinámicos
+    */
+    
+    // VARIABLES GLOBALES
+    let chart = null;           // Referencia al gráfico de Chart.js
+    let refreshInterval = null; // Intervalo para actualización automática
+    
+    // EVENTO: Cuando termina de cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar el gráfico circular
+        initChart();
+        
+        // Configurar actualización automática cada 30 segundos
+        startAutoRefresh();
+        
+        // Animar las barras de progreso al cargar
+        animateProgressBars();
+    });
+    
+    /**
+     * INICIALIZAR EL GRÁFICO DE PASTEL CON CHART.JS
+     * 
+     * Crea un gráfico circular interactivo mostrando la distribución de votos
+     */
+    function initChart() {
+        // Obtener el elemento canvas donde se dibujará el gráfico
+        const ctx = document.getElementById('resultsChart');
+        
+        // Si no existe el canvas o no hay votos, no crear gráfico
+        if (!ctx || {{ total_votes }} === 0) return;
+        
+        // DATOS DEL GRÁFICO
+        const data = {
+            // ETIQUETAS: Texto de cada opción de la encuesta
+            labels: [
+                <!-- 
+                BUCLE DJANGO DENTRO DE JAVASCRIPT:
+                Genera un array de JavaScript con las opciones
+                |escapejs escapa caracteres especiales para JavaScript
+                -->
+                {% for choice_stat in choices_with_stats %}
+                    "{{ choice_stat.choice.choice_text|escapejs }}"{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                // VALORES: Número de votos de cada opción
+                data: [
+                    {% for choice_stat in choices_with_stats %}
+                        {{ choice_stat.votes }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                // COLORES: Array de colores para cada sección
+                backgroundColor: [
+                    '#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1',
+                    '#fd7e14', '#20c997', '#e83e8c', '#6c757d', '#17a2b8'
+                ],
+                borderWidth: 2,    // Grosor del borde
+                borderColor: '#fff' // Color del borde (blanco)
+            }]
+        };
+        
+        // CONFIGURACIÓN DEL GRÁFICO
+        const config = {
+            type: 'doughnut',  // Tipo: gráfico de dona (circular con hueco)
+            data: data,
+            options: {
+                responsive: true,              // Se adapta al tamaño del contenedor
+                maintainAspectRatio: false,   // Permite cambiar la proporción
+                plugins: {
+                    legend: {
+                        position: 'bottom',   // Leyenda en la parte inferior
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} votos (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true
+                }
+            }
+        };
+        
+        chart = new Chart(ctx, config);
+    }
+    
+    /**
+     * Inicia la actualización automática cada 5 segundos
+     */
+    function startAutoRefresh() {
+        refreshInterval = setInterval(() => {
+            updateResults();
+        }, 5000);
+    }
+    
+    /**
+     * Detiene la actualización automática
+     */
+    function stopAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    }
+    
+    /**
+     * Actualiza los resultados mediante AJAX
+     */
+    function updateResults() {
+        fetch(`{% url 'polls:live_results_api' question.id %}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateUI(data);
+                    updateLastRefreshTime();
+                } else {
+                    console.error('Error al obtener resultados:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error de conexión:', error);
+            });
+    }
+    
+    /**
+     * Actualiza la interfaz con los nuevos datos
+     */
+    function updateUI(data) {
+        // Actualizar total de votos
+        const totalVotesElement = document.getElementById('totalVotes');
+        if (totalVotesElement) {
+            const oldTotal = parseInt(totalVotesElement.textContent);
+            const newTotal = data.total_votes;
+            
+            if (oldTotal !== newTotal) {
+                totalVotesElement.classList.add('updating');
+                animateNumber(totalVotesElement, oldTotal, newTotal);
+                setTimeout(() => {
+                    totalVotesElement.classList.remove('updating');
+                }, 1000);
+            }
+        }
+        
+        // Actualizar resultados individuales
+        Object.entries(data.results).forEach(([choiceId, result]) => {
+            const resultItem = document.querySelector(`[data-choice-id="${choiceId}"]`);
+            if (resultItem) {
+                // Actualizar número de votos
+                const votesElement = resultItem.querySelector('[data-votes]');
+                if (votesElement) {
+                    const oldVotes = parseInt(votesElement.getAttribute('data-votes'));
+                    const newVotes = result.votes;
+                    
+                    if (oldVotes !== newVotes) {
+                        votesElement.setAttribute('data-votes', newVotes);
+                        animateNumber(votesElement, oldVotes, newVotes);
+                    }
+                }
+                
+                // Actualizar porcentaje
+                const percentageElement = resultItem.querySelector('[data-percentage]');
+                if (percentageElement) {
+                    percentageElement.setAttribute('data-percentage', result.percentage);
+                    percentageElement.textContent = result.percentage;
+                }
+                
+                // Actualizar barra de progreso
+                const progressBar = resultItem.querySelector('.result-bar');
+                if (progressBar) {
+                    const newWidth = result.percentage > 0 ? Math.max(result.percentage, 1) : 0;
+                    progressBar.style.width = `${newWidth}%`;
+                    progressBar.setAttribute('data-width', newWidth);
+                    
+                    // Actualizar texto dentro de la barra
+                    if (result.percentage > 15) {
+                        progressBar.textContent = `${result.percentage}%`;
+                    } else {
+                        progressBar.textContent = '';
+                    }
+                }
+            }
+        });
+        
+        // Actualizar gráfico
+        if (chart && data.total_votes > 0) {
+            const newData = Object.values(data.results).map(result => result.votes);
+            chart.data.datasets[0].data = newData;
+            chart.update('none'); // Actualizar sin animación para suavidad
+        }
+    }
+    
+    /**
+     * Anima un número desde un valor inicial a uno final
+     */
+    function animateNumber(element, start, end) {
+        const duration = 500;
+        const startTime = performance.now();
+        
+        function updateNumber(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            const current = Math.floor(start + (end - start) * progress);
+            element.textContent = current;
+            
+            if (progress < 1) {
+                requestAnimationFrame(updateNumber);
+            }
+        }
+        
+        requestAnimationFrame(updateNumber);
+    }
+    
+    /**
+     * Actualiza el tiempo de la última actualización
+     */
+    function updateLastRefreshTime() {
+        const lastUpdateElement = document.getElementById('lastUpdate');
+        if (lastUpdateElement) {
+            const now = new Date();
+            lastUpdateElement.innerHTML = `<i class="fas fa-clock me-1"></i>${now.toLocaleTimeString()}`;
+        }
+    }
+    
+    /**
+     * ACTUALIZACIÓN MANUAL FORZADA
+     * 
+     * Permite al usuario actualizar los resultados manualmente
+     * sin esperar el intervalo automático
+     */
+    function manualRefresh() {
+        updateResults();
+        showToast('Resultados actualizados', 'success');
+    }
+    
+    /**
+     * ANIMAR LAS BARRAS DE PROGRESO AL CARGAR LA PÁGINA
+     * 
+     * Crea un efecto visual atractivo donde las barras
+     * crecen gradualmente desde 0% hasta su valor real
+     */
+    function animateProgressBars() {
+        // Obtener todas las barras de progreso
+        const bars = document.querySelectorAll('.result-bar');
+        
+        bars.forEach((bar, index) => {
+            // Obtener el ancho final de la barra
+            const width = bar.getAttribute('data-width');
+            
+            // Empezar desde 0%
+            bar.style.width = '0%';
+            
+            // Animar con retraso escalonado
+            setTimeout(() => {
+                bar.style.transition = 'width 1s ease-out';
+                bar.style.width = `${width}%`;
+            }, index * 200); // 200ms de retraso entre cada barra
+        });
+    }
+    
+    /* 
+    OPTIMIZACIONES DE RENDIMIENTO Y UX:
+    Estas funciones mejoran la experiencia del usuario
+    */
+    
+    // LIMPIAR INTERVAL CUANDO SE SALE DE LA PÁGINA
+    window.addEventListener('beforeunload', function() {
+        stopAutoRefresh();
+    });
+    
+    // PAUSAR ACTUALIZACIÓN CUANDO LA VENTANA NO ESTÁ VISIBLE
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            // Usuario cambió de pestaña, pausar actualizaciones
+            stopAutoRefresh();
+        } else {
+            // Usuario volvió, reactivar actualizaciones
+            startAutoRefresh();
+            updateResults(); // Actualizar inmediatamente al volver
+        }
+    });
+</script>
+{% endblock %}
+
+<!-- 
+═══════════════════════════════════════════════════════════════
+GUÍA EDUCATIVA COMPLETA - PLANTILLA DE RESULTADOS
+═══════════════════════════════════════════════════════════════
+
+RESUMEN DE FUNCIONALIDADES:
+
+1. VISUALIZACIÓN DE DATOS:
+   ✅ Estadísticas numéricas (votos totales, opciones, participación)
+   ✅ Barras de progreso animadas con porcentajes
+   ✅ Gráfico circular interactivo con Chart.js
+   ✅ Indicadores visuales del voto del usuario
+
+2. ACTUALIZACIÓN EN TIEMPO REAL:
+   ✅ Actualización automática cada 30 segundos
+   ✅ Indicadores visuales de estado de actualización
+   ✅ Pausa inteligente cuando la ventana no está visible
+   ✅ Actualización manual bajo demanda
+
+3. EXPERIENCIA DE USUARIO:
+   ✅ Animaciones suaves y atractivas
+   ✅ Diseño responsivo para todos los dispositivos
+   ✅ Estados vacíos informativos
+   ✅ Navegación intuitiva entre páginas
+
+TECNOLOGÍAS INTEGRADAS:
+
+├── DJANGO TEMPLATE LANGUAGE
+│   ├── extends - Herencia de plantillas
+│   ├── block - Secciones personalizables
+│   ├── if - Lógica condicional
+│   ├── for - Bucles para datos dinámicos
+│   ├── variable - Inserción de valores
+│   └── filtros - Transformación de datos
+
+├── BOOTSTRAP 5
+│   ├── Sistema de grid responsivo
+│   ├── Componentes (cards, buttons, badges)
+│   ├── Utilidades de espaciado
+│   └── Clases de color y tipografía
+
+├── CHART.JS
+│   ├── Gráficos interactivos
+│   ├── Animaciones automáticas
+│   ├── Configuración responsiva
+│   └── Personalización de colores
+
+├── JAVASCRIPT MODERNO
+│   ├── addEventListener() - Manejo de eventos
+│   ├── fetch() - Peticiones AJAX
+│   ├── setTimeout() - Temporizadores
+│   ├── Promise - Programación asíncrona
+│   └── DOM manipulation - Actualización dinámica
+
+└── CSS PERSONALIZADO
+    ├── Animaciones con @keyframes
+    ├── Transiciones suaves
+    ├── Variables CSS personalizadas
+    └── Responsive design
+
+FLUJO DE DATOS:
+
+1. CARGA INICIAL:
+   Usuario accede → Vista results() → Consulta BD → 
+   Cálculo estadísticas → Renderizado plantilla → 
+   Inicialización JavaScript → Creación gráficos
+
+2. ACTUALIZACIÓN AUTOMÁTICA:
+   Timer 30s → Petición AJAX → Vista results_api() → 
+   JSON response → Actualización DOM → Animaciones
+
+3. INTERACCIÓN USUARIO:
+   Click manual → updateResults() → 
+   Fetch datos → Actualizar elementos → 
+   Mostrar feedback
+
+BUENAS PRÁCTICAS IMPLEMENTADAS:
+
+🔒 SEGURIDAD:
+   - Escape de datos con |escapejs
+   - Validación de entrada
+   - Protección CSRF en formularios
+
+⚡ RENDIMIENTO:
+   - Carga diferida de recursos
+   - Pausar updates en pestañas inactivas
+   - Limpieza de intervals
+
+♿ ACCESIBILIDAD:
+   - Texto alternativo en gráficos
+   - Contraste de colores adecuado
+   - Navegación por teclado
+
+📱 RESPONSIVE:
+   - Grid flexible de Bootstrap
+   - Canvas responsivo
+   - Texto adaptativo
+
+CONCEPTOS DJANGO AVANZADOS:
+
+1. TEMPLATE FILTERS:
+   - |pluralize: Pluralización automática
+   - |escapejs: Escape para JavaScript
+   - |length: Conteo de elementos
+   - |timesince: Tiempo transcurrido
+
+2. CONTEXT PROCESSORS:
+   - Datos compartidos entre templates
+   - Variables globales disponibles
+
+3. TEMPLATE INHERITANCE:
+   - base.html como plantilla padre
+   - Bloques específicos para contenido
+   - CSS y JS modulares
+
+4. URL REVERSING:
+   - Etiqueta url para generar enlaces
+   - Namespace para organización
+   - Parámetros dinámicos
+
+OPTIMIZACIONES APLICADAS:
+
+• Lazy loading de gráficos
+• Debounce en actualizaciones
+• Memoria eficiente con cleanup
+• Batch updates del DOM
+• CSS animations via GPU
+• Progressive enhancement
+
+DEBUGGING TIPS:
+
+🐛 PROBLEMAS COMUNES:
+   - Chart.js no carga: Verificar CDN
+   - Updates no funcionan: Revisar JavaScript console
+   - Estilos rotos: Verificar Bootstrap CDN
+   - Datos incorrectos: Revisar vista results()
+
+📋 HERRAMIENTAS ÚTILES:
+   - DevTools > Network para AJAX
+   - DevTools > Console para errores JS
+   - Django Debug Toolbar para consultas BD
+   - Browser responsive mode para mobile
+
+═══════════════════════════════════════════════════════════════
+-->

@@ -1,0 +1,782 @@
+{% extends "polls/base.html" %}
+<!-- 
+PLANTILLA DE DETALLE DE ENCUESTA - detail.html
+
+PROPÓSITO:
+Esta plantilla muestra una encuesta específica donde los usuarios pueden votar.
+Es la página principal de interacción donde se registran los votos.
+
+FUNCIONALIDADES PRINCIPALES:
+1. Mostrar la pregunta y opciones de la encuesta
+2. Permitir votar si el usuario no ha votado antes
+3. Mostrar mensaje informativo si ya votó
+4. Formulario de votación con validación
+5. Navegación entre páginas
+6. Información de la encuesta (fecha, creador, total de votos)
+
+TECNOLOGÍAS UTILIZADAS:
+- Django Template Language: Para la lógica de presentación
+- Bootstrap 5: Para estilos responsivos
+- Font Awesome: Para íconos
+- JavaScript personalizado: Para interactividad
+- CSS personalizado: Para animaciones y efectos
+
+CÓMO FUNCIONA:
+1. El usuario llega desde la página principal (index.html)
+2. Django pasa el objeto 'question' desde la vista detail()
+3. Se verifica si el usuario ya votó en esta encuesta
+4. Se muestra el formulario apropiado según el estado del usuario
+5. Al votar, se envía a la vista vote() para procesar el voto
+-->
+
+<!-- 
+HERENCIA DE PLANTILLAS:
+La etiqueta extends permite que esta plantilla herede todo el contenido de base.html
+Esto incluye el HTML básico, CSS, JavaScript y estructura común
+-->
+
+<!-- 
+BLOQUE TITLE:
+Personaliza el título de la página que aparece en la pestaña del navegador
+{{ question.question_text }} inserta dinámicamente el texto de la pregunta
+-->
+{% block title %}{{ question.question_text }} - Encuestas App{% endblock %}
+
+<!-- 
+BLOQUE CONTENT:
+Aquí va todo el contenido específico de esta página
+Se inserta en el lugar donde base.html tiene el bloque content
+-->
+{% block content %}
+
+<!-- 
+ESTRUCTURA PRINCIPAL DE LA PÁGINA
+Usa el sistema de grid de Bootstrap para crear un layout responsivo
+-->
+<div class="row">
+    <!-- 
+    CONTENEDOR PRINCIPAL:
+    - col-lg-8: En pantallas grandes ocupa 8 de 12 columnas (66%)
+    - mx-auto: Centra horizontalmente el contenido
+    -->
+    <div class="col-lg-8 mx-auto">
+        
+        <!-- 
+        TARJETA PRINCIPAL:
+        - .card: Componente de Bootstrap para contenedores con bordes
+        - .shadow-lg: Sombra grande para dar profundidad
+        - .border-0: Sin bordes
+        - .fade-in: Clase personalizada para animación de entrada
+        -->
+        <div class="card shadow-lg border-0 fade-in">
+            
+            <!-- 
+            ENCABEZADO DE LA TARJETA:
+            Muestra el título y la fecha de publicación
+            -->
+            <div class="card-header bg-primary text-white">
+                <!-- 
+                FLEXBOX LAYOUT:
+                - d-flex: Activa flexbox
+                - justify-content-between: Distribuye elementos en extremos
+                - align-items-center: Alinea verticalmente al centro
+                -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="h4 mb-0">
+                        <!-- 
+                        ÍCONO DE FONT AWESOME:
+                        - fas fa-poll: Ícono de encuesta
+                        - me-2: Margin end de 2 unidades (espacio a la derecha)
+                        -->
+                        <i class="fas fa-poll me-2"></i>
+                        Encuesta
+                    </h1>
+                    <small>
+                        <i class="fas fa-calendar me-1"></i>
+                        <!-- 
+                        FILTRO DE FECHA DE DJANGO:
+                        |date:"d/m/Y" formatea la fecha como día/mes/año
+                        question.pub_date es el campo de fecha del modelo Question
+                        -->
+                        {{ question.pub_date|date:"d/m/Y" }}
+                    </small>
+                </div>
+            </div>
+            <!-- 
+            CUERPO DE LA TARJETA:
+            Contiene todo el contenido principal de la página
+            -->
+            <div class="card-body p-4">
+                
+                <!-- 
+                SECCIÓN DE LA PREGUNTA:
+                Muestra el texto de la pregunta e información adicional
+                -->
+                <div class="mb-4">
+                    <!-- 
+                    PREGUNTA PRINCIPAL:
+                    {{ question.question_text }} inserta dinámicamente el texto
+                    que viene del modelo Question definido en models.py
+                    -->
+                    <h2 class="text-primary mb-3">{{ question.question_text }}</h2>
+                    
+                    <!-- 
+                    INFORMACIÓN ADICIONAL DE LA ENCUESTA:
+                    - .row: Fila del sistema de grid
+                    - .text-muted: Color de texto gris (Bootstrap)
+                    - .small: Texto de tamaño pequeño
+                    -->
+                    <div class="row text-muted small">
+                        <!-- COLUMNA IZQUIERDA: Información del creador -->
+                        <div class="col-md-6">
+                            <i class="fas fa-user me-1"></i>
+                            Creada por: 
+                            <!-- 
+                            CONDICIONAL DE DJANGO:
+                            La etiqueta if verifica si existe un valor
+                            question.created_by es una relación ForeignKey al modelo User
+                            -->
+                            {% if question.created_by %}
+                                <strong>{{ question.created_by.username }}</strong>
+                            {% else %}
+                                <strong>Anónimo</strong>
+                            {% endif %}
+                        </div>
+                        <!-- COLUMNA DERECHA: Total de votos -->
+                        <div class="col-md-6 text-md-end">
+                            <i class="fas fa-vote-yea me-1"></i>
+                            <!-- 
+                            total_votes es una variable pasada desde la vista detail()
+                            |pluralize agrega 's' si el número no es 1
+                            -->
+                            <strong>{{ total_votes }}</strong> voto{{ total_votes|pluralize }}
+                        </div>
+                    </div>
+                </div>
+                <!-- 
+                LÓGICA PRINCIPAL: VERIFICAR SI EL USUARIO YA VOTÓ
+                
+                Esta es la parte más importante de la plantilla.
+                Determina qué mostrar al usuario según su estado de votación.
+                
+                user_has_voted es una variable boolean que se pasa desde la vista
+                Se calcula en views.py usando la base de datos
+                -->
+                {% if user_has_voted %}
+                    <!-- 
+                    CASO 1: EL USUARIO YA VOTÓ
+                    Mostramos un mensaje informativo y botón para ver resultados
+                    -->
+                    <div class="alert alert-info border-0 shadow-sm">
+                        <!-- 
+                        DISEÑO FLEXBOX:
+                        - d-flex: Activa flexbox
+                        - align-items-center: Alinea verticalmente
+                        -->
+                        <div class="d-flex align-items-center">
+                            <!-- ÍCONO GRANDE DE CONFIRMACIÓN -->
+                            <i class="fas fa-check-circle fa-2x me-3 text-success"></i>
+                            <div>
+                                <!-- TÍTULO DEL MENSAJE -->
+                                <h5 class="alert-heading mb-1">¡Ya has votado!</h5>
+                                <p class="mb-2">
+                                    <!-- 
+                                    MOSTRAR LA OPCIÓN QUE ELIGIÓ:
+                                    user_vote_choice viene de la vista y contiene
+                                    el objeto Choice por el que votó el usuario
+                                    -->
+                                    Tu voto por <strong>"{{ user_vote_choice.choice_text }}"</strong> ha sido registrado.
+                                </p>
+                                <small class="text-muted">
+                                    Puedes ver los resultados actualizados en tiempo real.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 
+                    BOTÓN PARA VER RESULTADOS:
+                    {% url 'polls:results' question.id %} genera la URL para la página de resultados
+                    Usa el namespace 'polls' y el nombre 'results' definidos en urls.py
+                    -->
+                    <div class="text-center">
+                        <a href="{% url 'polls:results' question.id %}" class="btn btn-success btn-lg btn-custom">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Ver Resultados en Tiempo Real
+                        </a>
+                    </div>
+                    
+                {% else %}
+                    <!-- 
+                    CASO 2: EL USUARIO NO HA VOTADO
+                    Mostramos el formulario de votación
+                    -->
+                    
+                    <!-- 
+                    FORMULARIO DE VOTACIÓN:
+                    - method="post": Envía datos al servidor (requerido para cambios)
+                    - action="{% url %}": Define dónde se envían los datos
+                    - id="voteForm": Identificador para JavaScript
+                    -->
+                    <form method="post" action="{% url 'polls:vote' question.id %}" id="voteForm">
+                        <!-- 
+                        TOKEN CSRF (Cross-Site Request Forgery):
+                        OBLIGATORIO en todos los formularios POST de Django
+                        Protege contra ataques maliciosos
+                        Django rechazará el formulario sin este token
+                        -->
+                        {% csrf_token %}
+                        <!-- 
+                        MANEJO DE ERRORES:
+                        error_message es una variable que puede pasar la vista
+                        Si hay un error (ej: no se seleccionó opción), se muestra aquí
+                        -->
+                        {% if error_message %}
+                            <div class="alert alert-danger border-0 shadow-sm">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {{ error_message }}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 
+                        INSTRUCCIONES PARA EL USUARIO:
+                        Explicación clara de qué debe hacer
+                        -->
+                        <div class="mb-4">
+                            <h5 class="text-secondary">
+                                <i class="fas fa-hand-pointer me-2"></i>
+                                Selecciona tu opción:
+                            </h5>
+                            <p class="text-muted">
+                                Haz clic en una de las opciones de abajo para registrar tu voto.
+                            </p>
+                        </div>
+                        
+                        <!-- 
+                        SECCIÓN DE OPCIONES DE VOTACIÓN:
+                        Aquí se muestran todas las opciones disponibles
+                        -->
+                        <div class="vote-options mb-4">
+                            <!-- 
+                            BUCLE FOR DE DJANGO:
+                            {% for choice in question.choice_set.all %}
+                            
+                            EXPLICACIÓN DETALLADA:
+                            - question: El objeto Question pasado desde la vista
+                            - choice_set: Relación inversa al modelo Choice
+                            - .all: Obtiene todas las opciones relacionadas
+                            - choice: Variable temporal para cada iteración
+                            
+                            EQUIVALENTE EN PYTHON:
+                            for choice in question.choice_set.all():
+                                # hacer algo con choice
+                            -->
+                            {% for choice in question.choice_set.all %}
+                                <!-- 
+                                CONTENEDOR DE CADA OPCIÓN:
+                                .vote-option es una clase CSS personalizada
+                                -->
+                                <div class="vote-option">
+                                    <!-- 
+                                    FORM CHECK DE BOOTSTRAP:
+                                    .form-check es la clase base para inputs tipo radio/checkbox
+                                    -->
+                                    <div class="form-check">
+                                        <!-- 
+                                        INPUT RADIO BUTTON:
+                                        
+                                        ATRIBUTOS IMPORTANTES:
+                                        - type="radio": Solo permite seleccionar una opción
+                                        - name="choice": Agrupa todos los radio buttons
+                                        - id="choice{{ choice.id }}": ID único para cada opción
+                                        - value="{{ choice.id }}": Valor que se envía al servidor
+                                        - required: HTML5 - obliga a seleccionar una opción
+                                        
+                                        CÓMO FUNCIONA:
+                                        Cuando el usuario selecciona una opción y envía el formulario,
+                                        se envía: choice=<id_de_la_opcion_seleccionada>
+                                        -->
+                                        <input class="form-check-input" 
+                                               type="radio" 
+                                               name="choice" 
+                                               id="choice{{ choice.id }}" 
+                                               value="{{ choice.id }}"
+                                               required>
+                                        
+                                        <!-- 
+                                        LABEL (ETIQUETA):
+                                        - for="choice{{ choice.id }}": Conecta con el input
+                                        - Al hacer clic en el label, se selecciona el radio button
+                                        - .w-100: Ancho completo para mejor UX
+                                        -->
+                                        <label class="form-check-label w-100" for="choice{{ choice.id }}">
+                                            <!-- 
+                                            CONTENIDO DE LA OPCIÓN:
+                                            Flexbox para distribuir el texto y el ícono
+                                            -->
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <!-- TEXTO DE LA OPCIÓN -->
+                                                <span class="fw-medium">{{ choice.choice_text }}</span>
+                                                <!-- ÍCONO DECORATIVO (se muestra al hacer hover) -->
+                                                <i class="fas fa-arrow-right text-primary" style="opacity: 0; transition: opacity 0.3s;"></i>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <!-- 
+                                CASO ESPECIAL: NO HAY OPCIONES
+                                {% empty %} se ejecuta si el bucle for está vacío
+                                Esto no debería pasar en una encuesta bien configurada
+                                -->
+                                <div class="alert alert-warning border-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Esta encuesta no tiene opciones disponibles.
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <!-- 
+                        BOTÓN DE ENVÍO DEL VOTO:
+                        Solo se muestra si hay opciones disponibles
+                        -->
+                        {% if question.choice_set.all %}
+                            <div class="text-center">
+                                <!-- 
+                                BOTÓN PRINCIPAL:
+                                - type="submit": Envía el formulario al hacer clic
+                                - id="submitBtn": Para control con JavaScript
+                                - .btn-vote: Clase CSS personalizada
+                                - .btn-lg: Botón grande de Bootstrap
+                                - .btn-custom: Clase personalizada para efectos
+                                -->
+                                <button type="submit" class="btn btn-vote btn-lg btn-custom px-5" id="submitBtn">
+                                    <i class="fas fa-vote-yea me-2"></i>
+                                    <!-- 
+                                    TEXTO DEL BOTÓN:
+                                    id="btnText" permite cambiar el texto con JavaScript
+                                    cuando se está enviando el formulario
+                                    -->
+                                    <span id="btnText">Enviar mi Voto</span>
+                                    <!-- 
+                                    SPINNER DE CARGA:
+                                    Se muestra cuando se está procesando el voto
+                                    .d-none lo mantiene oculto inicialmente
+                                    -->
+                                    <span id="btnSpinner" class="spinner d-none ms-2"></span>
+                                </button>
+                            </div>
+                            
+                            <!-- 
+                            INFORMACIÓN SOBRE SEGURIDAD:
+                            Tranquiliza al usuario sobre la privacidad de su voto
+                            -->
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-lock me-1"></i>
+                                    Tu voto es anónimo y seguro. Solo puedes votar una vez por encuesta.
+                                </small>
+                            </div>
+                        {% endif %}
+                    </form>
+                {% endif %}
+            </div>
+            
+            <!-- 
+            FOOTER DE LA TARJETA:
+            Información adicional y botones de navegación
+            -->
+            <div class="card-footer bg-light">
+                <div class="row align-items-center">
+                    <!-- COLUMNA IZQUIERDA: Información temporal -->
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            <!-- 
+                            FILTRO TIMESINCE:
+                            Muestra cuánto tiempo ha pasado desde la publicación
+                            Ej: "hace 2 días", "hace 3 horas"
+                            -->
+                            Publicada {{ question.pub_date|timesince }} ago
+                        </small>
+                    </div>
+                    <!-- COLUMNA DERECHA: Botones de navegación -->
+                    <div class="col-md-6 text-md-end">
+                        <!-- 
+                        BOTÓN VOLVER:
+                        Regresa a la lista principal de encuestas
+                        -->
+                        <a href="{% url 'polls:index' %}" class="btn btn-outline-secondary btn-sm me-2">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Volver a la lista
+                        </a>
+                        <!-- 
+                        BOTÓN VER RESULTADOS:
+                        Va directo a la página de resultados
+                        Útil si solo quiere ver sin votar
+                        -->
+                        <a href="{% url 'polls:results' question.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-chart-bar me-1"></i>
+                            Ver resultados
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 
+        INFORMACIÓN ADICIONAL SOBRE LA VOTACIÓN:
+        Solo se muestra si el usuario no ha votado
+        Proporciona información educativa sobre el proceso
+        -->
+        {% if not user_has_voted %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <!-- 
+                    PANEL INFORMATIVO:
+                    Fondo gris claro con información importante
+                    -->
+                    <div class="bg-light p-3 rounded border">
+                        <h6 class="text-primary mb-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Información sobre la votación:
+                        </h6>
+                        <!-- 
+                        LISTA DE PUNTOS IMPORTANTES:
+                        Ayuda al usuario a entender el proceso
+                        -->
+                        <ul class="mb-0 small text-muted">
+                            <li>Solo puedes votar una vez por encuesta</li>
+                            <li>Tu voto es anónimo y seguro</li>
+                            <li>Los resultados se actualizan en tiempo real</li>
+                            <li>No podrás cambiar tu voto una vez enviado</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+<!-- 
+BLOQUE CSS PERSONALIZADO:
+CSS específico para esta página que se agrega al <head> del documento
+-->
+{% block extra_css %}
+<style>
+    /* 
+    ESTILOS ESPECÍFICOS PARA LA PÁGINA DE VOTACIÓN
+    
+    Estos estilos mejoran la experiencia de usuario y añaden
+    efectos visuales que no están disponibles en Bootstrap
+    */
+    
+    /* 
+    EFECTO HOVER PARA LAS OPCIONES:
+    Cuando el usuario pasa el mouse sobre una opción,
+    el ícono de flecha se hace visible
+    */
+    .vote-option:hover .fa-arrow-right {
+        opacity: 1 !important;
+    }
+    
+    /* 
+    ESTILO PARA OPCIÓN SELECCIONADA:
+    Cuando se selecciona una opción, la flecha permanece visible
+    */
+    .vote-option.selected .fa-arrow-right {
+        opacity: 1 !important;
+        color: var(--primary-color) !important;
+    }
+    
+    /* 
+    MEJORA DEL FOCUS EN RADIO BUTTONS:
+    Cuando el usuario navega con teclado (accesibilidad)
+    */
+    .form-check-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+    }
+    
+    /* 
+    ESTILO PARA BOTÓN DESHABILITADO:
+    Cuando se está enviando el voto
+    */
+    .btn-vote:disabled {
+        background: #6c757d !important;
+        border-color: #6c757d !important;
+        cursor: not-allowed;
+    }
+    
+    /* 
+    ANIMACIONES DE ENTRADA:
+    Cada opción aparece gradualmente para mejor UX
+    */
+    .vote-option {
+        animation: slideInUp 0.5s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    
+    /* 
+    RETRASOS ESCALONADOS:
+    Cada opción aparece con un pequeño retraso
+    para crear un efecto de cascada
+    */
+    .vote-option:nth-child(1) { animation-delay: 0.1s; }
+    .vote-option:nth-child(2) { animation-delay: 0.2s; }
+    .vote-option:nth-child(3) { animation-delay: 0.3s; }
+    .vote-option:nth-child(4) { animation-delay: 0.4s; }
+    .vote-option:nth-child(5) { animation-delay: 0.5s; }
+    
+    /* 
+    DEFINICIÓN DE LA ANIMACIÓN:
+    Define cómo se mueven las opciones al aparecer
+    */
+    @keyframes slideInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+<!-- 
+BLOQUE JAVASCRIPT PERSONALIZADO:
+JavaScript específico para esta página que se agrega al final del <body>
+-->
+{% block extra_js %}
+<script>
+    /* 
+    JAVASCRIPT ESPECÍFICO PARA LA PÁGINA DE VOTACIÓN
+    
+    Este código mejora la experiencia de usuario agregando:
+    1. Validación en tiempo real
+    2. Efectos visuales
+    3. Prevención de envíos múltiples
+    4. Feedback inmediato al usuario
+    5. Accesibilidad mejorada
+    */
+    
+    // EVENTO QUE SE EJECUTA CUANDO LA PÁGINA TERMINA DE CARGAR
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obtener referencias a elementos importantes del DOM
+        const form = document.getElementById('voteForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const radioButtons = document.querySelectorAll('input[type="radio"]');
+        
+        /* 
+        MEJORAR LA EXPERIENCIA DE SELECCIÓN DE OPCIONES
+        
+        Agrega efectos visuales cuando el usuario selecciona una opción
+        */
+        radioButtons.forEach(radio => {
+            // EVENTO: Cuando cambia la selección
+            radio.addEventListener('change', function() {
+                // Remover clase 'selected' de todas las opciones
+                document.querySelectorAll('.vote-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+                
+                // Agregar clase 'selected' a la opción elegida
+                const selectedOption = this.closest('.vote-option');
+                if (selectedOption) {
+                    selectedOption.classList.add('selected');
+                    
+                    /* 
+                    ANIMACIÓN DE CONFIRMACIÓN:
+                    Pequeño efecto de "pulso" para confirmar la selección
+                    */
+                    selectedOption.style.transform = 'scale(1.02)';
+                    setTimeout(() => {
+                        selectedOption.style.transform = 'scale(1)';
+                    }, 150);
+                }
+                
+                /* 
+                HABILITAR EL BOTÓN DE ENVÍO:
+                Solo se activa cuando se selecciona una opción
+                */
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+            });
+        });
+        
+        /* 
+        MANEJAR EL ENVÍO DEL FORMULARIO
+        */
+        if (form) {
+            // DESHABILITAR EL BOTÓN INICIALMENTE
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+            
+            // EVENTO: Cuando se envía el formulario
+            form.addEventListener('submit', function(e) {
+                /* 
+                VALIDACIÓN: Verificar que se haya seleccionado una opción
+                
+                document.querySelector() busca el primer elemento que coincida
+                input[name="choice"]:checked busca un radio button marcado
+                */
+                const selectedChoice = document.querySelector('input[name="choice"]:checked');
+                
+                if (!selectedChoice) {
+                    // PREVENIR EL ENVÍO si no hay selección
+                    e.preventDefault();
+                    
+                    // MOSTRAR MENSAJE DE ERROR
+                    showToast('Por favor selecciona una opción antes de votar', 'error');
+                    return;
+                }
+                
+                /* 
+                MOSTRAR ESTADO DE CARGA:
+                Cambiar la apariencia del botón mientras se procesa
+                */
+                if (submitBtn && btnText && btnSpinner) {
+                    submitBtn.disabled = true;
+                    btnText.textContent = 'Enviando voto...';
+                    btnSpinner.classList.remove('d-none');
+                }
+                
+                // MOSTRAR MENSAJE DE CONFIRMACIÓN
+                showToast('Enviando tu voto...', 'info');
+            });
+        }
+        
+        /* 
+        EFECTOS VISUALES PARA LAS OPCIONES AL HACER HOVER
+        
+        Mejora la experiencia de usuario mostrando claramente
+        sobre qué opción está el cursor
+        */
+        document.querySelectorAll('.vote-option').forEach(option => {
+            // EVENTO: Cuando entra el mouse
+            option.addEventListener('mouseenter', function() {
+                if (!this.querySelector('input').checked) {
+                    this.style.transform = 'translateX(5px)';
+                }
+            });
+            
+            // EVENTO: Cuando sale el mouse
+            option.addEventListener('mouseleave', function() {
+                if (!this.querySelector('input').checked) {
+                    this.style.transform = 'translateX(0)';
+                }
+            });
+        });
+        
+        /* 
+        AGREGAR ACCESIBILIDAD POR TECLADO
+        
+        Permite que los usuarios naveguen y seleccionen con el teclado
+        Importante para usuarios con discapacidades
+        */
+        document.addEventListener('keydown', function(e) {
+            // Si presiona Enter en un radio button, seleccionarlo
+            if (e.key === 'Enter' && document.activeElement.type === 'radio') {
+                document.activeElement.click();
+            }
+        });
+    });
+    
+    /**
+     * FUNCIÓN PARA PREVENIR ENVÍO MÚLTIPLE DEL FORMULARIO
+     * 
+     * Evita que el usuario haga clic múltiples veces en "Enviar"
+     * mientras se procesa el primer envío
+     */
+    function preventDoubleSubmit() {
+        const form = document.getElementById('voteForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (form && submitBtn) {
+            // FLAG para rastrear si ya se está enviando
+            let isSubmitting = false;
+            
+            form.addEventListener('submit', function(e) {
+                if (isSubmitting) {
+                    // Ya se está enviando, prevenir envío adicional
+                    e.preventDefault();
+                    return false;
+                }
+                // Marcar como "enviando"
+                isSubmitting = true;
+            });
+        }
+    }
+    
+    /* 
+    INICIALIZAR PREVENCIÓN DE ENVÍO MÚLTIPLE
+    Se ejecuta inmediatamente cuando se carga el script
+    */
+    preventDoubleSubmit();
+</script>
+{% endblock %}
+
+<!-- 
+NOTAS EDUCATIVAS IMPORTANTES PARA PRINCIPIANTES:
+
+═══════════════════════════════════════════════════════════════
+
+1. ESTRUCTURA DE PLANTILLAS DE DJANGO:
+   - extends: Herencia de plantillas
+   - block: Secciones que se pueden sobrescribir
+   - variable: Insertar valores de variables
+   - if: Lógica condicional
+   - for: Bucles para iterar sobre listas
+   - url: Generar URLs usando nombres de rutas
+
+2. FORMULARIOS EN DJANGO:
+   - method="post": Para enviar datos al servidor
+   - {% csrf_token %}: Token de seguridad OBLIGATORIO
+   - action="{% url %}": Destino donde se envían los datos
+   - input type="radio": Solo permite una selección
+   - name="choice": Agrupa todas las opciones
+
+3. BOOTSTRAP CLASSES UTILIZADAS:
+   - .card: Contenedor con bordes y sombra
+   - .btn: Estilos para botones
+   - .form-check: Contenedor para radio buttons
+   - .alert: Mensajes de notificación
+   - .d-flex: Activar flexbox
+   - .text-muted: Color de texto gris
+
+4. JAVASCRIPT MODERNO:
+   - addEventListener(): Escuchar eventos
+   - querySelector(): Buscar elementos en el DOM
+   - forEach(): Iterar sobre listas de elementos
+   - classList: Manipular clases CSS
+   - preventDefault(): Prevenir comportamiento por defecto
+
+5. ACCESIBILIDAD:
+   - Etiquetas apropiadas para screen readers
+   - Navegación por teclado
+   - Contraste de colores adecuado
+   - Textos descriptivos
+
+6. EXPERIENCIA DE USUARIO:
+   - Validación en tiempo real
+   - Estados de carga
+   - Animaciones suaves
+   - Feedback inmediato
+   - Prevención de errores
+
+7. SEGURIDAD:
+   - Token CSRF contra ataques
+   - Validación tanto en frontend como backend
+   - Sanitización de datos de entrada
+
+8. FLUJO DE DATOS:
+   Usuario selecciona opción → Hace clic en "Enviar" → 
+   Formulario se envía a polls:vote → Vista procesa el voto → 
+   Redirige a página de resultados
+
+═══════════════════════════════════════════════════════════════
+-->

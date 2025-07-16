@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- 
+    Configuración básica del documento HTML
+    - charset: codificación de caracteres para soportar tildes y ñ
+    - viewport: hace que la página sea responsive en móviles
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Título dinámico de la página -->
+    <title>{% block title %}Encuestas App{% endblock %}</title>
+    
+    <!-- 
+    Bootstrap CSS: Framework de CSS para diseño responsivo y componentes modernos
+    Lo cargamos desde CDN para facilidad de desarrollo
+    -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome: Iconos vectoriales -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- CSS personalizado -->
+    <style>
+        /* 
+        Estilos personalizados para nuestra aplicación
+        */
+        
+        /* Variables CSS para colores consistentes */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+        }
+        
+        /* Estilos generales */
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Navegación */
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        /* Contenido principal */
+        main {
+            flex: 1;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        
+        /* Tarjetas de encuestas */
+        .poll-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,.1);
+        }
+        
+        .poll-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,.15);
+        }
+        
+        /* Botones personalizados */
+        .btn-custom {
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-vote {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            border: none;
+            color: white;
+        }
+        
+        .btn-vote:hover {
+            background: linear-gradient(135deg, #0056b3, var(--primary-color));
+            transform: translateY(-1px);
+            color: white;
+        }
+        
+        /* Estadísticas */
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Opciones de voto */
+        .vote-option {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .vote-option:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+        
+        .vote-option.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        
+        /* Radio buttons personalizados */
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        /* Alertas */
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+        
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .poll-card {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    
+    <!-- Bloque para CSS adicional en páginas específicas -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- 
+    Barra de navegación principal
+    Bootstrap navbar con diseño responsivo
+    -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <!-- Logo/Marca de la aplicación -->
+            <a class="navbar-brand" href="{% url 'polls:index' %}">
+                <i class="fas fa-poll me-2"></i>
+                Encuestas App
+            </a>
+            
+            <!-- Botón para móviles (hamburger menu) -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Enlaces de navegación -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'polls:index' %}">
+                            <i class="fas fa-home me-1"></i>
+                            Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'polls:about' %}">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Acerca de
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Enlaces del lado derecho -->
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/" target="_blank">
+                            <i class="fas fa-cog me-1"></i>
+                            Admin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- 
+    Contenido principal de la página
+    Cada página específica define su contenido aquí
+    -->
+    <main class="container-fluid">
+        <div class="container">
+            <!-- Mostrar mensajes del sistema (éxito, error, etc.) -->
+            {% if messages %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {% if message.tags == 'success' %}
+                                    <i class="fas fa-check-circle me-2"></i>
+                                {% elif message.tags == 'error' %}
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle me-2"></i>
+                                {% endif %}
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Contenido específico de cada página -->
+            {% block content %}
+            <!-- Aquí va el contenido específico de cada plantilla -->
+            {% endblock %}
+        </div>
+    </main>
+    
+    <!-- 
+    Footer de la aplicación
+    -->
+    <footer class="bg-dark text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-poll me-2"></i>Encuestas App</h5>
+                    <p class="mb-0">Sistema de encuestas en tiempo real desarrollado con Django.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">
+                        <i class="fas fa-code me-1"></i>
+                        Desarrollado con 
+                        <i class="fas fa-heart text-danger mx-1"></i>
+                        usando Django y Bootstrap
+                    </p>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i>
+                        © 2025 - Proyecto de Aprendizaje
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- 
+    JavaScript libraries
+    Bootstrap JS para componentes interactivos
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- JavaScript personalizado para funcionalidad común -->
+    <script>
+        // Funciones JavaScript comunes para toda la aplicación
+        
+        /**
+         * Muestra un toast de notificación
+         * @param {string} message - Mensaje a mostrar
+         * @param {string} type - Tipo de mensaje (success, error, warning, info)
+         */
+        function showToast(message, type = 'info') {
+            // Crear elemento toast dinámicamente
+            const toastContainer = document.getElementById('toast-container') || createToastContainer();
+            
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-${type === 'error' ? 'danger' : type} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'}-circle me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            const toastElement = toastContainer.lastElementChild;
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+            
+            // Eliminar el toast del DOM después de que se oculte
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        }
+        
+        /**
+         * Crea el contenedor de toasts si no existe
+         */
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
+        
+        /**
+         * Animación de entrada para elementos
+         */
+        function animateOnScroll() {
+            const elements = document.querySelectorAll('.fade-in');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            });
+            
+            elements.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                observer.observe(el);
+            });
+        }
+        
+        // Inicializar animaciones cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            animateOnScroll();
+            
+            // Mejorar la experiencia de los radio buttons
+            const radioButtons = document.querySelectorAll('input[type="radio"]');
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // Remover clase selected de todas las opciones
+                    document.querySelectorAll('.vote-option').forEach(option => {
+                        option.classList.remove('selected');
+                    });
+                    
+                    // Agregar clase selected a la opción elegida
+                    const selectedOption = this.closest('.vote-option');
+                    if (selectedOption) {
+                        selectedOption.classList.add('selected');
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <!-- Bloque para JavaScript adicional en páginas específicas -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

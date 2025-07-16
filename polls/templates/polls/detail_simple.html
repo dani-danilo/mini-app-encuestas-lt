@@ -1,0 +1,51 @@
+{% extends "polls/base.html" %}
+
+{% block title %}{{ question.question_text }} - Encuestas App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow-lg border-0">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h1 class="h4 mb-0 text-white font-weight-bold">{{ question.question_text }}</h1>
+            </div>
+            <div class="card-body">
+                {% if user_has_voted %}
+                    <div class="alert alert-success border-0 shadow-sm">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-check-circle me-2"></i>
+                            ¡Ya votaste en esta encuesta!
+                        </h5>
+                        <p class="mb-2">Tu voto fue registrado correctamente.</p>
+                        {% if user_vote_choice %}
+                            <p class="mb-3">
+                                <strong>Tu elección:</strong> 
+                                <span class="badge bg-primary">{{ user_vote_choice.choice_text }}</span>
+                            </p>
+                        {% endif %}
+                        <a href="{% url 'polls:results' question.id %}" class="btn btn-primary">Ver Resultados</a>
+                    </div>
+                {% else %}
+                    <form action="{% url 'polls:vote' question.id %}" method="post">
+                        {% csrf_token %}
+                        {% for choice in question.choice_set.all %}
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}">
+                                <label class="form-check-label" for="choice{{ forloop.counter }}">
+                                    {{ choice.choice_text }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-success">Votar</button>
+                    </form>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <a href="{% url 'polls:index' %}" class="btn btn-secondary">← Volver a la lista</a>
+                    <a href="{% url 'polls:results' question.id %}" class="btn btn-primary">Ver Resultados</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,380 @@
+{% extends "polls/base.html" %}
+
+{% block title %}Acerca de - Encuestas App{% endblock %}
+
+{% block content %}
+<!-- 
+Página informativa sobre la aplicación de encuestas
+Explica cómo funciona, tecnologías utilizadas y características
+-->
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Encabezado principal -->
+        <div class="text-center mb-5 fade-in">
+            <h1 class="display-4 text-primary mb-3">
+                <i class="fas fa-poll me-3"></i>
+                Encuestas App
+            </h1>
+            <p class="lead text-muted">
+                Sistema de encuestas en tiempo real desarrollado con Django
+            </p>
+        </div>
+        
+        <!-- Sección: ¿Qué es? -->
+        <div class="card shadow border-0 mb-4 fade-in">
+            <div class="card-body p-4">
+                <h3 class="text-primary mb-3">
+                    <i class="fas fa-question-circle me-2"></i>
+                    ¿Qué es Encuestas App?
+                </h3>
+                <p class="text-muted mb-3">
+                    Encuestas App es una aplicación web interactiva que permite a los usuarios crear, 
+                    participar y ver resultados de encuestas en tiempo real. Desarrollada como proyecto 
+                    educativo, demuestra el poder de Django para crear aplicaciones web modernas y funcionales.
+                </p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Interfaz intuitiva y moderna
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Resultados en tiempo real
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Diseño responsivo
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Panel de administración
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Prevención de votos duplicados
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Gráficos interactivos
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección: Cómo funciona -->
+        <div class="card shadow border-0 mb-4 fade-in">
+            <div class="card-body p-4">
+                <h3 class="text-primary mb-4">
+                    <i class="fas fa-cogs me-2"></i>
+                    ¿Cómo funciona?
+                </h3>
+                
+                <div class="row">
+                    <!-- Paso 1 -->
+                    <div class="col-md-6 mb-4">
+                        <div class="d-flex">
+                            <div class="bg-primary text-white rounded-circle p-3 me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <strong>1</strong>
+                            </div>
+                            <div>
+                                <h5 class="mb-2">Explora las Encuestas</h5>
+                                <p class="text-muted mb-0">
+                                    Navega por la lista de encuestas disponibles en la página principal.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Paso 2 -->
+                    <div class="col-md-6 mb-4">
+                        <div class="d-flex">
+                            <div class="bg-success text-white rounded-circle p-3 me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <strong>2</strong>
+                            </div>
+                            <div>
+                                <h5 class="mb-2">Vota por tu Opción</h5>
+                                <p class="text-muted mb-0">
+                                    Haz clic en una encuesta, lee las opciones y vota por tu favorita.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Paso 3 -->
+                    <div class="col-md-6 mb-4">
+                        <div class="d-flex">
+                            <div class="bg-warning text-white rounded-circle p-3 me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <strong>3</strong>
+                            </div>
+                            <div>
+                                <h5 class="mb-2">Ve los Resultados</h5>
+                                <p class="text-muted mb-0">
+                                    Observa cómo tu voto afecta los resultados en tiempo real.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Paso 4 -->
+                    <div class="col-md-6 mb-4">
+                        <div class="d-flex">
+                            <div class="bg-info text-white rounded-circle p-3 me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                <strong>4</strong>
+                            </div>
+                            <div>
+                                <h5 class="mb-2">Comparte y Discute</h5>
+                                <p class="text-muted mb-0">
+                                    Los resultados se actualizan automáticamente para todos los usuarios.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección: Tecnologías -->
+        <div class="card shadow border-0 mb-4 fade-in">
+            <div class="card-body p-4">
+                <h3 class="text-primary mb-4">
+                    <i class="fas fa-code me-2"></i>
+                    Tecnologías Utilizadas
+                </h3>
+                
+                <div class="row">
+                    <!-- Backend -->
+                    <div class="col-md-6 mb-4">
+                        <h5 class="text-secondary mb-3">
+                            <i class="fas fa-server me-2"></i>Backend
+                        </h5>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fab fa-python text-warning fa-2x me-3"></i>
+                            <div>
+                                <strong>Python 3.8+</strong>
+                                <br><small class="text-muted">Lenguaje de programación principal</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-globe text-success fa-2x me-3"></i>
+                            <div>
+                                <strong>Django 4.2</strong>
+                                <br><small class="text-muted">Framework web de Python</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-database text-primary fa-2x me-3"></i>
+                            <div>
+                                <strong>SQLite</strong>
+                                <br><small class="text-muted">Base de datos integrada</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Frontend -->
+                    <div class="col-md-6 mb-4">
+                        <h5 class="text-secondary mb-3">
+                            <i class="fas fa-desktop me-2"></i>Frontend
+                        </h5>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fab fa-bootstrap text-purple fa-2x me-3"></i>
+                            <div>
+                                <strong>Bootstrap 5</strong>
+                                <br><small class="text-muted">Framework CSS responsivo</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fab fa-js-square text-warning fa-2x me-3"></i>
+                            <div>
+                                <strong>JavaScript ES6+</strong>
+                                <br><small class="text-muted">Interactividad y AJAX</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-chart-pie text-info fa-2x me-3"></i>
+                            <div>
+                                <strong>Chart.js</strong>
+                                <br><small class="text-muted">Gráficos interactivos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección: Características -->
+        <div class="card shadow border-0 mb-4 fade-in">
+            <div class="card-body p-4">
+                <h3 class="text-primary mb-4">
+                    <i class="fas fa-star me-2"></i>
+                    Características Principales
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-sync-alt text-primary fa-lg me-3 mt-1"></i>
+                            <div>
+                                <h6 class="mb-1">Tiempo Real</h6>
+                                <small class="text-muted">
+                                    Los resultados se actualizan automáticamente cada 5 segundos
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-shield-alt text-success fa-lg me-3 mt-1"></i>
+                            <div>
+                                <h6 class="mb-1">Seguro</h6>
+                                <small class="text-muted">
+                                    Prevención de votos duplicados por IP y usuario
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-mobile-alt text-info fa-lg me-3 mt-1"></i>
+                            <div>
+                                <h6 class="mb-1">Responsivo</h6>
+                                <small class="text-muted">
+                                    Funciona perfectamente en móviles y tablets
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-chart-bar text-warning fa-lg me-3 mt-1"></i>
+                            <div>
+                                <h6 class="mb-1">Visual</h6>
+                                <small class="text-muted">
+                                    Gráficos y barras de progreso animadas
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-users-cog text-purple fa-lg me-3 mt-1"></i>
+                            <div>
+                                <h6 class="mb-1">Administrable</h6>
+                                <small class="text-muted">
+                                    Panel de admin completo para gestionar encuestas
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-rocket text-danger fa-lg me-3 mt-1"></i>
+                            <div>
+                                <h6 class="mb-1">Rápido</h6>
+                                <small class="text-muted">
+                                    Optimizado para rendimiento y experiencia fluida
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección: Aprende más -->
+        <div class="card shadow border-0 mb-4 fade-in">
+            <div class="card-body p-4 bg-light">
+                <h3 class="text-primary mb-3">
+                    <i class="fas fa-graduation-cap me-2"></i>
+                    Proyecto Educativo
+                </h3>
+                <p class="text-muted mb-3">
+                    Esta aplicación fue desarrollada como proyecto de aprendizaje para demostrar conceptos
+                    fundamentales de desarrollo web con Django, incluyendo:
+                </p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-1">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Modelos y relaciones de base de datos
+                            </li>
+                            <li class="mb-1">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Vistas basadas en funciones y clases
+                            </li>
+                            <li class="mb-1">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Sistema de plantillas de Django
+                            </li>
+                            <li class="mb-1">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Formularios y validación
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-1">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Panel de administración personalizado
+                            </li>
+                            <li class="mb-1">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                AJAX y comunicación asíncrona
+                            </li>
+                            <li class="mb-1">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Diseño responsivo con Bootstrap
+                            </li>
+                            <li class="mb-1">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Mejores prácticas de desarrollo
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Botones de acción -->
+        <div class="text-center mb-5 fade-in">
+            <a href="{% url 'polls:index' %}" class="btn btn-primary btn-lg btn-custom me-3">
+                <i class="fas fa-poll me-2"></i>
+                Ver Encuestas
+            </a>
+            <a href="/admin/" class="btn btn-outline-primary btn-lg btn-custom" target="_blank">
+                <i class="fas fa-cog me-2"></i>
+                Panel de Admin
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .text-purple {
+        color: #6f42c1 !important;
+    }
+    
+    .fab.fa-bootstrap {
+        color: #7952b3 !important;
+    }
+</style>
+{% endblock %}

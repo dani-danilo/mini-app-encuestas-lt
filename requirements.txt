@@ -1,0 +1,6 @@
+# Dependencias para la aplicación de encuestas Django
+# Django: Framework web principal para Python
+Django==4.2.7
+
+# Pillow: Para manejar imágenes (requerido por Django)
+Pillow==10.1.0

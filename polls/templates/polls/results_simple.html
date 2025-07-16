@@ -1,0 +1,119 @@
+{% extends "polls/base.html" %}
+
+{% block title %}Resultados: {{ question.question_text }} - Encuestas App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card shadow-lg border-0">
+            <div class="card-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                <h1 class="h4 mb-0 text-white font-weight-bold">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Resultados: {{ question.question_text }}
+                </h1>
+            </div>
+            <div class="card-body">
+                <!-- Total de votos -->
+                <div class="alert alert-info mb-4">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        Total de votos: <span class="badge bg-primary fs-6">{{ total_votes }}</span>
+                    </h5>
+                </div>
+
+                {% if total_votes > 0 %}
+                    <!-- Resultados de cada opción -->
+                    {% for choice_stat in choices_with_stats %}
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">{{ choice_stat.choice.choice_text }}</h6>
+                                <span class="badge bg-secondary">
+                                    {{ choice_stat.votes }} votos ({{ choice_stat.percentage }}%)
+                                </span>
+                            </div>
+                            <!-- TEST: Barra súper simple que SÍ funciona -->
+                            <div style="background-color: #e9ecef; height: 30px; border-radius: 5px; position: relative;">
+                                {% if choice_stat.percentage > 0 %}
+                                <div style="background-color: #007bff; height: 100%; width: {{ choice_stat.percentage }}%; border-radius: 5px;"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Gráfico circular -->
+                    <div class="text-center mt-4">
+                        <canvas id="resultsChart" width="400" height="200"></canvas>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning text-center">
+                        <h5>Aún no hay votos</h5>
+                        <p>Sé el primero en votar en esta encuesta.</p>
+                    </div>
+                {% endif %}
+
+                <!-- Botones de navegación -->
+                <div class="mt-4 text-center">
+                    <a href="{% url 'polls:index' %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Volver a la lista
+                    </a>
+                    <a href="{% url 'polls:detail' question.id %}" class="btn btn-primary">
+                        <i class="fas fa-vote-yea me-1"></i>
+                        Ir a votar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Solo crear gráfico si hay votos
+    {% if total_votes > 0 %}
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('resultsChart').getContext('2d');
+        
+        const data = {
+            labels: [
+                {% for choice_stat in choices_with_stats %}
+                    '{{ choice_stat.choice.choice_text }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for choice_stat in choices_with_stats %}
+                        {{ choice_stat.votes }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                    '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                ]
+            }]
+        };
+        
+        const config = {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribución de votos'
+                    }
+                }
+            }
+        };
+        
+        new Chart(ctx, config);
+    });
+    {% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,320 @@
+{% extends "polls/base.html" %}
+
+{% block title %}Encuestas Disponibles - Encuestas App{% endblock %}
+
+{% block content %}
+<!-- 
+Página principal que muestra la lista de encuestas disponibles
+Esta plantilla extiende base.html y define el contenido específico
+-->
+
+<!-- Encabezado de la página -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="text-center py-5 bg-white rounded shadow-sm fade-in">
+            <h1 class="display-4 text-primary mb-3">
+                <i class="fas fa-poll me-3"></i>
+                Encuestas Disponibles
+            </h1>
+            <p class="lead text-muted">
+                Participa en nuestras encuestas y ve los resultados en tiempo real
+            </p>
+            {% if total_questions %}
+                <div class="d-inline-block bg-primary text-white px-3 py-2 rounded-pill">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    {{ total_questions }} encuesta{{ total_questions|pluralize }} disponible{{ total_questions|pluralize }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Contenido principal -->
+{% if questions %}
+    <!-- Si hay encuestas disponibles, mostrarlas -->
+    <div class="row">
+        {% for question in questions %}
+            <div class="col-lg-6 mb-4">
+                <!-- Tarjeta de encuesta individual -->
+                <div class="card poll-card h-100 fade-in">
+                    <div class="card-body">
+                        <!-- Encabezado de la tarjeta con información básica -->
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title text-primary mb-0">
+                                {{ question.question_text }}
+                            </h5>
+                            {% if question.was_published_recently %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-star me-1"></i>Nuevo
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Información adicional de la encuesta -->
+                        <div class="text-muted small mb-3">
+                            <div class="row">
+                                <div class="col-6">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ question.pub_date|date:"d/m/Y" }}
+                                </div>
+                                <div class="col-6 text-end">
+                                    <i class="fas fa-user me-1"></i>
+                                    {% if question.created_by %}
+                                        {{ question.created_by.username }}
+                                    {% else %}
+                                        Anónimo
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estadísticas de la encuesta -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary text-white rounded-circle p-2 me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-vote-yea fa-sm"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ question.total_votes_count }}</div>
+                                        <small class="text-muted">Voto{{ question.total_votes_count|pluralize }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success text-white rounded-circle p-2 me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-list fa-sm"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ question.choices_count }}</div>
+                                        <small class="text-muted">Opcion{{ question.choices_count|pluralize:"es" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Barra de progreso visual (simulada basada en votos) -->
+                        {% if question.total_votes_count > 0 %}
+                            <div class="mb-3">
+                                <small class="text-muted">Nivel de participación:</small>
+                                <div class="progress" style="height: 8px;">
+                                    {% if question.total_votes_count < 5 %}
+                                        <div class="progress-bar bg-warning" style="width: 25%"></div>
+                                    {% elif question.total_votes_count < 15 %}
+                                        <div class="progress-bar bg-info" style="width: 60%"></div>
+                                    {% else %}
+                                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-2">
+                            <!-- Botón principal para votar -->
+                            <a href="{% url 'polls:detail' question.id %}" 
+                               class="btn btn-vote btn-custom flex-fill">
+                                <i class="fas fa-vote-yea me-2"></i>
+                                Votar Ahora
+                            </a>
+                            
+                            <!-- Botón para ver resultados -->
+                            <a href="{% url 'polls:results' question.id %}" 
+                               class="btn btn-outline-primary btn-custom">
+                                <i class="fas fa-chart-bar me-1"></i>
+                                Resultados
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer de la tarjeta con información adicional -->
+                    <div class="card-footer bg-transparent border-top-0">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            Última actualización: {{ question.pub_date|timesince }} ago
+                        </small>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Paginación -->
+    {% if questions.has_other_pages %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="Navegación de encuestas">
+                    <ul class="pagination justify-content-center">
+                        <!-- Botón "Anterior" -->
+                        {% if questions.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ questions.previous_page_number }}">
+                                    <i class="fas fa-chevron-left me-1"></i>Anterior
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="fas fa-chevron-left me-1"></i>Anterior
+                                </span>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Números de página -->
+                        {% for num in questions.paginator.page_range %}
+                            {% if questions.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > questions.number|add:'-3' and num < questions.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Botón "Siguiente" -->
+                        {% if questions.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ questions.next_page_number }}">
+                                    Siguiente<i class="fas fa-chevron-right ms-1"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    Siguiente<i class="fas fa-chevron-right ms-1"></i>
+                                </span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                
+                <!-- Información de paginación -->
+                <div class="text-center text-muted">
+                    <small>
+                        Página {{ questions.number }} de {{ questions.paginator.num_pages }}
+                        ({{ questions.paginator.count }} encuesta{{ questions.paginator.count|pluralize }} en total)
+                    </small>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+{% else %}
+    <!-- Si no hay encuestas disponibles -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5 fade-in">
+                <div class="mb-4">
+                    <i class="fas fa-poll-h fa-5x text-muted mb-3"></i>
+                    <h3 class="text-muted">No hay encuestas disponibles</h3>
+                    <p class="lead text-muted">
+                        Actualmente no hay encuestas activas para mostrar.
+                    </p>
+                </div>
+                
+                <div class="bg-light p-4 rounded">
+                    <h5 class="mb-3">¿Eres administrador?</h5>
+                    <p class="text-muted mb-3">
+                        Puedes crear nuevas encuestas desde el panel de administración.
+                    </p>
+                    <a href="/admin/" class="btn btn-primary btn-custom" target="_blank">
+                        <i class="fas fa-plus me-2"></i>
+                        Ir al Panel de Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Sección informativa adicional -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="bg-primary text-white p-4 rounded fade-in">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h4 class="mb-2">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        ¿Cómo funciona?
+                    </h4>
+                    <p class="mb-0">
+                        Selecciona una encuesta, vota por tu opción favorita y ve los resultados 
+                        actualizarse en tiempo real. ¡Tu opinión cuenta!
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'polls:about' %}" class="btn btn-light btn-custom">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Más información
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // JavaScript específico para la página de índice
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animación de contadores
+        animateCounters();
+        
+        // Actualizar "tiempo transcurrido" cada minuto
+        setInterval(updateTimeAgo, 60000);
+    });
+    
+    /**
+     * Anima los números de votos con efecto de conteo
+     */
+    function animateCounters() {
+        const counters = document.querySelectorAll('.fw-bold');
+        
+        counters.forEach(counter => {
+            const target = parseInt(counter.textContent);
+            if (isNaN(target)) return;
+            
+            let current = 0;
+            const increment = target / 20; // 20 pasos de animación
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    counter.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    counter.textContent = Math.floor(current);
+                }
+            }, 50);
+        });
+    }
+    
+    /**
+     * Actualiza los textos de "hace X tiempo"
+     * En una aplicación real, esto haría una llamada AJAX
+     */
+    function updateTimeAgo() {
+        // Esta función se podría expandir para hacer llamadas AJAX
+        // y actualizar los timestamps en tiempo real
+        console.log('Actualizando timestamps...');
+    }
+    
+    /**
+     * Añade efecto hover mejorado a las tarjetas
+     */
+    document.querySelectorAll('.poll-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+</script>
+{% endblock %}
