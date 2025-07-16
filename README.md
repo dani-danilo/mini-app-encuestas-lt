@@ -164,9 +164,5 @@ mini-app_encuestas_1/
 4. Haz push a la rama
 5. Abre un Pull Request
 
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ve el archivo LICENSE para más detalles.
-
 ---
-💡 **Tip**: Si eres nuevo en Django, te recomiendo seguir el tutorial oficial después de explorar esta aplicación.
+
